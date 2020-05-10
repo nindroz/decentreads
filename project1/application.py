@@ -53,4 +53,7 @@ def loginsuc():
             return "sorry doesent exist"
         user = db.execute("SELECT * FROM registry WHERE username = :givenName",{"givenName":givenName}).fetchone()
         if(user.password==givenPass):
-            return 'logged in'
+            return redirect('/user/%s'%user.id)
+@app.route('/user/<int:user_id>')
+def user(user_id):
+    return "%s"%user_id
