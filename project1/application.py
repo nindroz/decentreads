@@ -57,3 +57,10 @@ def loginsuc():
 @app.route('/user/<int:user_id>')
 def user(user_id):
     return "%s"%user_id
+
+@app.route('/search', methods = ['POST'])
+def search():
+    query= str(request.form.get("query"))
+    books = db.execute("SELECT * FROM books WHERE isbn LIKE :val OR title LIKE :val OR author LIKE :val OR  year LIKE :val", {"val":query}).fetchall()
+    db.commit()
+    return render_template("search.html",books=books)
