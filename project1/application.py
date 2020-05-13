@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 app = Flask(__name__)
-
+app.secret_key="dfjskgkfvjdgljkldfmjnmgl;m"
 # Check for environment variable
 if not os.getenv("DATABASE_URL"):
     raise RuntimeError("DATABASE_URL is not set")
@@ -47,16 +47,26 @@ def login():
 def loginsuc():
     givenName = request.form.get("username")
     givenPass = request.form.get("password")
-    #return ('h %s'%info)
     if(givenName!=None or givenPass!=None):
         if(db.execute("SELECT * FROM registry WHERE username = :givenName",{"givenName":givenName}).rowcount==0):
             return "sorry doesent exist"
         user = db.execute("SELECT * FROM registry WHERE username = :givenName",{"givenName":givenName}).fetchone()
         if(user.password==givenPass):
-            return redirect('/user/%s'%user.id)
-@app.route('/user/<int:user_id>')
-def user(user_id):
-    return "%s"%user_id
+            session['user']=givenName
+            return redirect('/user')
+
+@app.route("/logout")
+def logout():
+    session.pop("user",None)
+    return redirect('/')
+    
+@app.route('/user')
+def user():
+    if "user" in session:
+        user=session["user"]
+        return render_template("loggedIn.html")
+    else:
+        return redirect('/')
 
 @app.route('/search', methods = ['POST'])
 def search():
@@ -69,9 +79,10 @@ def search():
 def results(isbn):
     resultBook = db.execute("SELECT * FROM books WHERE isbn=:isbn",{"isbn":isbn}).fetchone()
     db.commit()
-    request = requests.get("https://www.goodreads.com/book/isbn/0385265700?key=r03xhZNVeS3gr7wwU4SA&format=json&callback=data&user_id=114305681")
+    request = requests.get("https://www.goodreads.com/book/review_counts.json?isbns={}&key=r03xhZNVeS3gr7wwU4SA".format(isbn))
     if(request.status_code!=200):
         raise Exception("error:api not returning")
-    data = request.json()
-    return data
-    #return render_template("bookPage.html",book=resultBook)
+    data=request.json()
+    avgRating= data["books"][0]["average_rating"]
+    numberOfRatings = data["books"][0]["work_ratings_count"]
+    return render_template("bookPage.html",book=resultBook, avgRating = avgRating, numberOfRatings = numberOfRatings)

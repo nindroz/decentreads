@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+
+{% block title %}
+user
+{% endblock %}
+
+{% block body %}
+ <a href="{{url_for('logout')}}">logout</a>
+ <form action="{{url_for('search')}}" method ="post">
+    <input type="text" name="query">
+</form>
+{% endblock %}
