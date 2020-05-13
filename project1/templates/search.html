@@ -5,8 +5,9 @@ search
 {% endblock %}
 
 {% block body %}
-
-    {% for book in books %}
-        <h1>{{ book.title }}</h1>
-    {% endfor %}
+    <ul>
+        {% for book in books %}
+            <li><h2><a href="{{ url_for( 'results', isbn= book.isbn ) }}">{{ book.title }}</a></h2></li>
+        {% endfor %}
+    </ul>
 {% endblock %}

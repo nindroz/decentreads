@@ -1,5 +1,5 @@
 import os
-
+import requests
 from flask import Flask, session, request, render_template, redirect
 from flask_session import Session
 from sqlalchemy import create_engine
@@ -61,6 +61,17 @@ def user(user_id):
 @app.route('/search', methods = ['POST'])
 def search():
     query= str(request.form.get("query"))
-    books = db.execute("SELECT * FROM books WHERE isbn LIKE :val OR title LIKE :val OR author LIKE :val OR  year LIKE :val", {"val":query}).fetchall()
+    books = db.execute("SELECT * FROM books WHERE isbn LIKE '%' ||:val||'%' OR title LIKE '%' ||:val||'%' OR author LIKE '%' ||:val||'%' OR  year LIKE '%' ||:val||'%'", {"val":query}).fetchall()
     db.commit()
     return render_template("search.html",books=books)
+
+@app.route('/results/<isbn>')
+def results(isbn):
+    resultBook = db.execute("SELECT * FROM books WHERE isbn=:isbn",{"isbn":isbn}).fetchone()
+    db.commit()
+    request = requests.get("https://www.goodreads.com/book/isbn/0385265700?key=r03xhZNVeS3gr7wwU4SA&format=json&callback=data&user_id=114305681")
+    if(request.status_code!=200):
+        raise Exception("error:api not returning")
+    data = request.json()
+    return data
+    #return render_template("bookPage.html",book=resultBook)
