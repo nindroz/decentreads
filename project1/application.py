@@ -76,28 +76,21 @@ def search():
         return "does not exist"
     return render_template("search.html",books=books)
     
-@app.route('/results/<isbn>')
-def results(isbn):
-    if(request.form.get("review")!=None):
-        review = request.form.get("review")
-        db.execute("INSERT INTO reviews (isbn,person,review) VALUES (:isbn,:person,:review)",{"isbn":int(isbn),"person":session["user"],"review":review})
-        reviews = db.execute("SELECT FROM reviews WHERE isbn=:isbn",{"isbn":isbn}).fetchall()
+@app.route('/book/<isbn>', methods = ["GET","POST"])
+def book(isbn):
     resultBook = db.execute("SELECT * FROM books WHERE isbn=:isbn",{"isbn":isbn}).fetchone()
-    db.commit()
     res = requests.get("https://www.goodreads.com/book/review_counts.json?isbns={}&key=r03xhZNVeS3gr7wwU4SA".format(isbn))
     if(res.status_code!=200):
+        print(res.status_code)
         raise Exception("error:api not returning")
     data=res.json()
     avgRating = data["books"][0]["average_rating"]
     numberOfRatings = data["books"][0]["work_ratings_count"]
-    if(reviews==None):
-        reviews=[]
-    return render_template("bookPage.html",book=resultBook, avgRating = avgRating, numberOfRatings = numberOfRatings,reviews=reviews)
 
-'''@app.route("/results/<isbn>/write",methods=["POST"])
-def write(isbn):
-    review = request.form.get("review")
-    db.execute("INSERT INTO reviews (isbn,person,review) VALUES (:isbn,:person,:review)",{"isbn":int(isbn),"person":session["user"],"review":review})
+    if request.method == "POST":
+        review = request.form.get("review")
+        db.execute("INSERT INTO reviews (isbn,person,review) VALUES (:isbn,:person,:review)",{"isbn":int(isbn),"person":session["user"],"review":review})
+    reviews = db.execute("SELECT FROM reviews WHERE isbn=:isbn",{"isbn":isbn}).fetchall() 
     db.commit()
-    reviews = db.execute("SELECT FROM reviews WHERE isbn=:isbn",{"isbn":isbn}).fetchall()
-    return render_template("bookPage.html", reviews = reviews)'''
+    return render_template("bookPage.html",book=resultBook, avgRating = avgRating, numberOfRatings = numberOfRatings,reviews=reviews)
+   
