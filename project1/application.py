@@ -72,17 +72,32 @@ def user():
 def search():
     query= str(request.form.get("query"))
     books = db.execute("SELECT * FROM books WHERE isbn LIKE '%' ||:val||'%' OR title LIKE '%' ||:val||'%' OR author LIKE '%' ||:val||'%' OR  year LIKE '%' ||:val||'%'", {"val":query}).fetchall()
-    db.commit()
+    if(not books):
+        return "does not exist"
     return render_template("search.html",books=books)
-
+    
 @app.route('/results/<isbn>')
 def results(isbn):
+    if(request.form.get("review")!=None):
+        review = request.form.get("review")
+        db.execute("INSERT INTO reviews (isbn,person,review) VALUES (:isbn,:person,:review)",{"isbn":int(isbn),"person":session["user"],"review":review})
+        reviews = db.execute("SELECT FROM reviews WHERE isbn=:isbn",{"isbn":isbn}).fetchall()
     resultBook = db.execute("SELECT * FROM books WHERE isbn=:isbn",{"isbn":isbn}).fetchone()
     db.commit()
-    request = requests.get("https://www.goodreads.com/book/review_counts.json?isbns={}&key=r03xhZNVeS3gr7wwU4SA".format(isbn))
-    if(request.status_code!=200):
+    res = requests.get("https://www.goodreads.com/book/review_counts.json?isbns={}&key=r03xhZNVeS3gr7wwU4SA".format(isbn))
+    if(res.status_code!=200):
         raise Exception("error:api not returning")
-    data=request.json()
-    avgRating= data["books"][0]["average_rating"]
+    data=res.json()
+    avgRating = data["books"][0]["average_rating"]
     numberOfRatings = data["books"][0]["work_ratings_count"]
-    return render_template("bookPage.html",book=resultBook, avgRating = avgRating, numberOfRatings = numberOfRatings)
+    if(reviews==None):
+        reviews=[]
+    return render_template("bookPage.html",book=resultBook, avgRating = avgRating, numberOfRatings = numberOfRatings,reviews=reviews)
+
+'''@app.route("/results/<isbn>/write",methods=["POST"])
+def write(isbn):
+    review = request.form.get("review")
+    db.execute("INSERT INTO reviews (isbn,person,review) VALUES (:isbn,:person,:review)",{"isbn":int(isbn),"person":session["user"],"review":review})
+    db.commit()
+    reviews = db.execute("SELECT FROM reviews WHERE isbn=:isbn",{"isbn":isbn}).fetchall()
+    return render_template("bookPage.html", reviews = reviews)'''

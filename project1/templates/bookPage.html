@@ -11,4 +11,16 @@
     <h4>ISBN: {{book.isbn}}</h4>
     <h4>Average ratings : {{avgRating}}</h4>
     <h4>Number of ratings: {{numberOfRatings}}</h4>
-{% endblock %}
+
+
+    <form action="{{url_for('results', isbn = book.isbn)}}">
+        <input type="text" name = "review" value="Write a review..">
+    </form>
+
+    <h1>Reviews:</h1>
+    <ul>
+        {% for review in reviews %}
+            <li>{{review.review}}</li>
+        {% endfor %}
+    </ul>
+    {% endblock %}
