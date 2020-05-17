@@ -18,9 +18,7 @@
     </form>
 
     <h1>Reviews:</h1>
-    <ul>
-        {% for review in reviews %}
-            <li>{{review.isbn}}</li>
-        {% endfor %}
-    </ul>
+    {% for review in reviews %}
+        <h4>{{review.review}}</h4>
+    {% endfor %}
     {% endblock %}
