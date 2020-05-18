@@ -5,13 +5,21 @@
 {% endblock %}
 
 {% block body %}
-  <form action='{{url_for("register")}}' method="post">
-    <button name="register" type="submit" class="btn btn-primary">Register</button>
-  </form>
-  <form action='{{url_for("login")}}' method="post">
-    <button id="login" type="submit" name="login" class="btn btn-primary">Login</button>
+  <form action="{{url_for('login')}}" method="post">
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input type="username" class="form-control" name="username">
+    </div>
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input type="password" class="form-control" name="password">
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
   </form>
   
+  <form action="{{url_for('register')}}" method ='post'>
+    <button type="submit" class="btn btn-primary btn-lg btn-block" style="margin-top:20px;">Make an account</button>
+  </form>
 
   <h2>{{json}}</h2>
 {% endblock %}

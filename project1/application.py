@@ -39,12 +39,8 @@ def registersuc():
     db.commit()
     return redirect('/')
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods = ['POST'])
 def login():
-    return render_template("login.html")
-
-@app.route('/loginsuc', methods = ['POST'])
-def loginsuc():
     givenName = request.form.get("username")
     givenPass = request.form.get("password")
     if(givenName!=None or givenPass!=None):
@@ -86,11 +82,16 @@ def book(isbn):
     data=res.json()
     avgRating = data["books"][0]["average_rating"]
     numberOfRatings = data["books"][0]["work_ratings_count"]
-
     if request.method == "POST":
         review = request.form.get("review")
-        db.execute("INSERT INTO reviews (isbn,person,review) VALUES (:isbn,:person,:review)",{"isbn":int(isbn),"person":session["user"],"review":review})
-    reviews = db.execute("SELECT FROM reviews WHERE isbn=:isbn",{"isbn":isbn}).fetchall() 
+        rating = request.form.get("rating")
+        db.execute("INSERT INTO reviews (isbn,person,review,rating) VALUES (:isbn,:person,:review,:rating)",{"isbn":int(isbn),"person":session["user"],"review":review,"rating":rating})
+    checkReview= db.execute("SELECT * FROM reviews WHERE person=:person AND isbn=:isbn",{"person":session["user"],"isbn":isbn}).fetchone()
+    if checkReview==None:
+        done=False
+    else:
+        done=True    
+    reviews = db.execute("SELECT * FROM reviews WHERE isbn=:isbn",{"isbn":isbn}).fetchall() 
     db.commit()
-    return render_template("bookPage.html",book=resultBook, avgRating = avgRating, numberOfRatings = numberOfRatings,reviews=reviews)
+    return render_template("bookPage.html",book=resultBook, avgRating = avgRating, numberOfRatings = numberOfRatings,reviews=reviews,done=done)
    

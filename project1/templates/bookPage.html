@@ -12,13 +12,24 @@
     <h4>Average ratings : {{avgRating}}</h4>
     <h4>Number of ratings: {{numberOfRatings}}</h4>
 
-
+    {% if done == False %}
     <form action="{{url_for('book', isbn = book.isbn)}}" method="POST">
         <input type="text" name = "review" value="Write a review..">
+        <select name="rating">
+            <option value="5">5</option>
+            <option value="4">4</option>
+            <option value="3">3</option>
+            <option value="2">2</option>
+            <option value="1">1</option>
+        </select>
+        <input type="submit">
     </form>
+    {% endif %}
 
     <h1>Reviews:</h1>
+    <ul>
     {% for review in reviews %}
-        <h4>{{review.review}}</h4>
+        <li>{{review.review}}   Rating: {{review.rating}}</li>
     {% endfor %}
+    </ul>
     {% endblock %}
