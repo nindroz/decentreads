@@ -8,28 +8,46 @@
     <h1>{{book.title}}</h1>
     <h3>By {{book.author}}</h3>
     <h3>Written in {{book.year}}</h3>
-    <h4>ISBN: {{book.isbn}}</h4>
-    <h4>Average ratings : {{avgRating}}</h4>
-    <h4>Number of ratings: {{numberOfRatings}}</h4>
+    <h3>ISBN: {{book.isbn}}</h3>
+    <h3>Average ratings : {{avgRating}}</h3>
+    <h3>Number of ratings: {{numberOfRatings}}</h3>
 
     {% if done == False %}
-    <form action="{{url_for('book', isbn = book.isbn)}}" method="POST">
-        <input type="text" name = "review" value="Write a review..">
-        <select name="rating">
-            <option value="5">5</option>
-            <option value="4">4</option>
-            <option value="3">3</option>
-            <option value="2">2</option>
-            <option value="1">1</option>
-        </select>
-        <input type="submit">
+    <form action="{{url_for('book',isbn=book.isbn)}}" method="post">
+        <div class="form-group">
+            <label for="review">Review</label>
+            <textarea class="form-control" name="review" cols="20" rows="5"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="rating">Rating</label>
+            <select class="form-control" name=rating>
+              <option value=1>1</option>
+              <option value=2>2</option>
+              <option value=3>3</option>
+              <option value=4>4</option>
+              <option value=5>5</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
     </form>
     {% endif %}
 
-    <h1>Reviews:</h1>
-    <ul>
-    {% for review in reviews %}
-        <li>{{review.review}}   Rating: {{review.rating}}</li>
-    {% endfor %}
-    </ul>
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">User</th>
+                <th scope="col">Rating</th>
+                <th scope="col">Review</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for review in reviews %}
+            <tr>
+                <td>{{review.person}}</td>
+                <td>{{review.rating}}</td>
+                <td>{{review.review}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     {% endblock %}

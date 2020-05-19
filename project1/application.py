@@ -21,16 +21,17 @@ engine = create_engine(os.getenv("DATABASE_URL"))
 db = scoped_session(sessionmaker(bind=engine))
 
 
-
+# landing page
 @app.route("/")
 def index():
     return render_template("index.html")
 
-
+#lets user register
 @app.route('/register', methods=['POST'])
 def register():
     return render_template("register.html")
 
+#register backend and then redirects to landing
 @app.route('/registersuc', methods = ['POST'])
 def registersuc():
     username= request.form.get("username")
@@ -38,26 +39,31 @@ def registersuc():
     db.execute("INSERT INTO registry (username,password) VALUES (:username,:password)",{"username":username,"password":password})
     db.commit()
     return redirect('/')
-
+#lets user login
 @app.route('/login', methods = ['POST'])
 def login():
     givenName = request.form.get("username")
     givenPass = request.form.get("password")
+    #checks for blank password and username
     if(givenName!=None or givenPass!=None):
+        #checks for blank password and username
         if(db.execute("SELECT * FROM registry WHERE username = :givenName",{"givenName":givenName}).rowcount==0):
             return "sorry doesent exist"
         user = db.execute("SELECT * FROM registry WHERE username = :givenName",{"givenName":givenName}).fetchone()
+        #checks username and password and makes a session
         if(user.password==givenPass):
             session['user']=givenName
             return redirect('/user')
 
 @app.route("/logout")
 def logout():
+    #ends session
     session.pop("user",None)
     return redirect('/')
     
 @app.route('/user')
 def user():
+    #shows logged in and gives search option
     if "user" in session:
         user=session["user"]
         return render_template("loggedIn.html")
@@ -66,15 +72,26 @@ def user():
 
 @app.route('/search', methods = ['POST'])
 def search():
+    #searches for book
     query= str(request.form.get("query"))
+    #looks for author, year, title, and isbn with partial search
     books = db.execute("SELECT * FROM books WHERE isbn LIKE '%' ||:val||'%' OR title LIKE '%' ||:val||'%' OR author LIKE '%' ||:val||'%' OR  year LIKE '%' ||:val||'%'", {"val":query}).fetchall()
     if(not books):
         return "does not exist"
-    return render_template("search.html",books=books)
+    return render_template("loggedIn.html",books=books)
     
 @app.route('/book/<isbn>', methods = ["GET","POST"])
 def book(isbn):
+    #makes sure one person doesent review more than once
+    checkReview= db.execute("SELECT * FROM reviews WHERE person=:person AND isbn=:isbn",{"person":session["user"],"isbn":isbn}).fetchone()
+    if checkReview==None:
+        done=False
+    else:
+        done=True
+    isbn=str(isbn)
     resultBook = db.execute("SELECT * FROM books WHERE isbn=:isbn",{"isbn":isbn}).fetchone()
+    
+    #pulls from api
     res = requests.get("https://www.goodreads.com/book/review_counts.json?isbns={}&key=r03xhZNVeS3gr7wwU4SA".format(isbn))
     if(res.status_code!=200):
         print(res.status_code)
@@ -82,16 +99,14 @@ def book(isbn):
     data=res.json()
     avgRating = data["books"][0]["average_rating"]
     numberOfRatings = data["books"][0]["work_ratings_count"]
-    if request.method == "POST":
+    
+    #sends in review
+    if request.method == "POST" and done==False:
         review = request.form.get("review")
         rating = request.form.get("rating")
-        db.execute("INSERT INTO reviews (isbn,person,review,rating) VALUES (:isbn,:person,:review,:rating)",{"isbn":int(isbn),"person":session["user"],"review":review,"rating":rating})
-    checkReview= db.execute("SELECT * FROM reviews WHERE person=:person AND isbn=:isbn",{"person":session["user"],"isbn":isbn}).fetchone()
-    if checkReview==None:
-        done=False
-    else:
-        done=True    
+        db.execute("INSERT INTO reviews (isbn,person,review,rating) VALUES (:isbn,:person,:review,:rating)",{"isbn":isbn,"person":session["user"],"review":review,"rating":rating})    
+        db.commit()
+        done=True
     reviews = db.execute("SELECT * FROM reviews WHERE isbn=:isbn",{"isbn":isbn}).fetchall() 
-    db.commit()
     return render_template("bookPage.html",book=resultBook, avgRating = avgRating, numberOfRatings = numberOfRatings,reviews=reviews,done=done)
    
