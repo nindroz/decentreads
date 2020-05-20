@@ -4,6 +4,15 @@
  {{book.title}}
 {% endblock %}
 
+{% block nav %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="{{url_for('user')}}">
+        Decentreads
+    </a>
+    <a class="nav-link" href="{{url_for('logout')}}">Logout</a>
+</nav>
+{% endblock %}
+
 {% block body %}
     <h1>{{book.title}}</h1>
     <h3>By {{book.author}}</h3>
@@ -32,7 +41,7 @@
     </form>
     {% endif %}
 
-    <table class="table">
+    <table class="table" style="margin-top:10px;">
         <thead>
             <tr>
                 <th scope="col">User</th>

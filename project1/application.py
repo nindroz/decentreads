@@ -1,6 +1,6 @@
 import os
 import requests
-from flask import Flask, session, request, render_template, redirect
+from flask import Flask, session, request, render_template, redirect, flash, url_for
 from flask_session import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -34,6 +34,8 @@ def register():
 #register backend and then redirects to landing
 @app.route('/registersuc', methods = ['POST'])
 def registersuc():
+    
+    #grabs user registering information and inserts into a table
     username= request.form.get("username")
     password = request.form.get("password")
     db.execute("INSERT INTO registry (username,password) VALUES (:username,:password)",{"username":username,"password":password})
@@ -42,19 +44,20 @@ def registersuc():
 #lets user login
 @app.route('/login', methods = ['POST'])
 def login():
+    #grabs inputted passwords
     givenName = request.form.get("username")
     givenPass = request.form.get("password")
-    #checks for blank password and username
-    if(givenName!=None or givenPass!=None):
-        #checks for blank password and username
-        if(db.execute("SELECT * FROM registry WHERE username = :givenName",{"givenName":givenName}).rowcount==0):
-            return "sorry doesent exist"
-        user = db.execute("SELECT * FROM registry WHERE username = :givenName",{"givenName":givenName}).fetchone()
-        #checks username and password and makes a session
-        if(user.password==givenPass):
-            session['user']=givenName
-            return redirect('/user')
 
+    #checks for blank password and username
+    if(db.execute("SELECT * FROM registry WHERE username = :givenName OR password = :givenPass",{"givenName":givenName,"givenPass":givenPass}).rowcount==0):
+        return render_template("index.html",error="Incorrect Credentials")
+    user = db.execute("SELECT * FROM registry WHERE username = :givenName",{"givenName":givenName}).fetchone()
+    
+    #checks username and password and makes a session
+    if(user.password==givenPass):
+        session['user']=givenName
+        return redirect('/user')
+    
 @app.route("/logout")
 def logout():
     #ends session
@@ -72,22 +75,27 @@ def user():
 
 @app.route('/search', methods = ['POST'])
 def search():
+    
     #searches for book
     query= str(request.form.get("query"))
+    
     #looks for author, year, title, and isbn with partial search
-    books = db.execute("SELECT * FROM books WHERE isbn LIKE '%' ||:val||'%' OR title LIKE '%' ||:val||'%' OR author LIKE '%' ||:val||'%' OR  year LIKE '%' ||:val||'%'", {"val":query}).fetchall()
+    books = db.execute("SELECT * FROM books WHERE lower(isbn) LIKE '%' ||lower(:val)||'%' OR lower(title) LIKE '%' ||lower(:val)||'%' OR lower(author) LIKE '%' ||lower(:val)||'%' OR  lower(year) LIKE '%' ||lower(:val)||'%'", {"val":query}).fetchall()
     if(not books):
         return "does not exist"
     return render_template("loggedIn.html",books=books)
     
 @app.route('/book/<isbn>', methods = ["GET","POST"])
 def book(isbn):
+    
     #makes sure one person doesent review more than once
     checkReview= db.execute("SELECT * FROM reviews WHERE person=:person AND isbn=:isbn",{"person":session["user"],"isbn":isbn}).fetchone()
     if checkReview==None:
         done=False
     else:
         done=True
+    
+    #grabs the book from the sql table
     isbn=str(isbn)
     resultBook = db.execute("SELECT * FROM books WHERE isbn=:isbn",{"isbn":isbn}).fetchone()
     
@@ -107,6 +115,8 @@ def book(isbn):
         db.execute("INSERT INTO reviews (isbn,person,review,rating) VALUES (:isbn,:person,:review,:rating)",{"isbn":isbn,"person":session["user"],"review":review,"rating":rating})    
         db.commit()
         done=True
+    
+    #grabs all reviews and loads the page
     reviews = db.execute("SELECT * FROM reviews WHERE isbn=:isbn",{"isbn":isbn}).fetchall() 
     return render_template("bookPage.html",book=resultBook, avgRating = avgRating, numberOfRatings = numberOfRatings,reviews=reviews,done=done)
    
