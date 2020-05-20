@@ -41,6 +41,7 @@ def registersuc():
     db.execute("INSERT INTO registry (username,password) VALUES (:username,:password)",{"username":username,"password":password})
     db.commit()
     return redirect('/')
+
 #lets user login
 @app.route('/login', methods = ['POST'])
 def login():
@@ -60,6 +61,7 @@ def login():
     
 @app.route("/logout")
 def logout():
+    
     #ends session
     session.pop("user",None)
     return redirect('/')
@@ -75,15 +77,17 @@ def user():
 
 @app.route('/search', methods = ['POST'])
 def search():
-    
     #searches for book
     query= str(request.form.get("query"))
+    
+    #sets book variable
+    book=None
     
     #looks for author, year, title, and isbn with partial search
     books = db.execute("SELECT * FROM books WHERE lower(isbn) LIKE '%' ||lower(:val)||'%' OR lower(title) LIKE '%' ||lower(:val)||'%' OR lower(author) LIKE '%' ||lower(:val)||'%' OR  lower(year) LIKE '%' ||lower(:val)||'%'", {"val":query}).fetchall()
     if(not books):
-        return "does not exist"
-    return render_template("loggedIn.html",books=books)
+        book="No books returned"
+    return render_template("loggedIn.html",books=books,book=book)
     
 @app.route('/book/<isbn>', methods = ["GET","POST"])
 def book(isbn):
